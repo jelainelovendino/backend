@@ -7,8 +7,11 @@ use App\Http\Resources\UserResource;
 use App\Http\Controllers\AuthController;
 use App\Http\Middleware\Authenticate;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\TransactionController;
+use App\Models\Transactions;
 
 Route::apiResource('books', BookController::class);
+Route::apiResource('transactions', TransactionController::class);
 
 Route::middleware('auth:sanctum')->get('/profile', function(Request $request){
     return new UserResource($request->user());
@@ -39,3 +42,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     //Route::get('/books', [AdminController::class, 'books']);
 });
 
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/borrow', [TransactionController::class, 'borrow']);
+    Route::post('/return/{transaction}', [TransactionController::class, 'returnBook']);
+});
