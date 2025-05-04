@@ -20,4 +20,9 @@ class Book extends Model
         'cover_image',
         'description'
     ];
+
+    public function transactions()
+    {
+        return $this->hasMany(Transactions::class);
+    }
 }
