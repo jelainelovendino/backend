@@ -12,15 +12,11 @@ class BookController extends Controller
 {
     public function index()
     {
-        $books = Book::get();
-        if($books->count() > 0)
-        {
-            return BookResource::collection($books);
-        }
-        else
-        {
-            return response()->json(['message' => 'No record available'], 200);
-        }
+        $books = Book::all();
+        return response()->json([
+            'message' => 'Books retrieved successfully',
+            'data' => BookResource::collection($books)
+        ], 200);
     }
 
     public function store(Request $request)
@@ -29,116 +25,102 @@ class BookController extends Controller
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
             'isbn' => 'required|string|max:255',
-            'published_date' => 'required|date',
-            'publisher' => 'required|string|max:255',
-            'total_copies' => 'required|integer',
-            'available_copies' => 'required|integer',
-            'genre' => 'required|string|max:255',
-            'cover_image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'description' => 'required',
+            'quantity' => 'required|integer|min:1',
         ]);
 
         if ($validator->fails())
         {
             return response()->json([
-                'message' => 'All fields are required',
-                'error' => $validator->messages(),
+                'message' => 'Validation failed',
+                'errors' => $validator->messages(),
             ], 422);
         }
 
-        if ($request->hasFile('cover_image')){
-            $image = $request->file('cover_image');
-            $imageName = time() .'.'. $image->getClientoriginalExtension();
-            $image->move(public_path('cover_image'),'$imageName');
-        } else {
-            $imageName = null;
-        }
-
-        $books = Book::create([
-            'title' => $request -> title,
-            'author' => $request -> author,
-            'isbn' => $request -> isbn,
-            'published_date' => $request -> published_date,
-            'publisher' => $request -> publisher,
-            'total_copies' => $request -> total_copies,
-            'available_copies' => $request -> available_copies,
-            'genre' => $request -> genre,
-            'cover_image' => $imageName,
-            'description' => $request -> description,
+        $book = Book::create([
+            'title' => $request->title,
+            'author' => $request->author,
+            'isbn' => $request->isbn,
+            'total_copies' => $request->quantity,
+            'available_copies' => $request->quantity,
+            'genre' => 'Uncategorized',
+            'published_date' => now(),
+            'publisher' => 'Unknown',
+            'description' => '',
         ]);
 
         return response()->json([
-            'message' => 'Book Created Succesfully',
-            'data' => new BookResource($books)
-        ],200);
+            'message' => 'Book created successfully',
+            'data' => new BookResource($book)
+        ], 201);
     }
 
-    public function show(Book $book)
+    public function show($id)
     {
-        return new BookResource($book);
+        $book = Book::find($id);
+        if (!$book) {
+            return response()->json([
+                'message' => 'Book not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'Book retrieved successfully',
+            'data' => new BookResource($book)
+        ], 200);
     }
 
-    public function update(Request $request, Book $book)
+    public function update(Request $request, $id)
     {
+        $book = Book::find($id);
+        if (!$book) {
+            return response()->json([
+                'message' => 'Book not found'
+            ], 404);
+        }
 
         $validator = Validator::make($request->all(),[
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
             'isbn' => 'required|string|max:255',
-            'published_date' => 'required|date',
-            'publisher' => 'required|string|max:255',
-            'total_copies' => 'required|integer',
-            'available_copies' => 'required|integer',
-            'genre' => 'required|string|max:255',
-            'cover_image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'description' => 'required',
+            'quantity' => 'required|integer|min:1',
         ]);
 
         if ($validator->fails())
         {
             return response()->json([
-                'message' => 'All fields are required',
-                'error' => $validator->messages(),
+                'message' => 'Validation failed',
+                'errors' => $validator->messages(),
             ], 422);
-        }
-        
-        if ($request->hasFile('cover_image')){
-            $image = $request->file('cover_image');
-            $imageName = time() .'.'. $image->getClientoriginalExtension();
-            $image->storeAs('cover_images','$imageName', 'public');
-        } else {
-            $imageName = $imageName = $book->cover_image;
         }
 
         $book->update([
-            'title' => $request -> title,
-            'author' => $request -> author,
-            'isbn' => $request -> isbn,
-            'published_date' => $request -> published_date,
-            'publisher' => $request -> publisher,
-            'total_copies' => $request -> total_copies,
-            'available_copies' => $request -> available_copies,
-            'genre' => $request -> genre,
-            'cover_image' => $imageName,
-            'description' => $request -> description,
+            'title' => $request->title,
+            'author' => $request->author,
+            'isbn' => $request->isbn,
+            'total_copies' => $request->quantity,
+            'available_copies' => $request->quantity,
         ]);
 
         return response()->json([
-            'message' => 'Book Updated Succesfully',
+            'message' => 'Book updated successfully',
             'data' => new BookResource($book)
-        ],200);
+        ], 200);
     }
 
-    public function destroy(Book $book)
+    public function destroy($id)
     {
+        $book = Book::find($id);
+        if (!$book) {
+            return response()->json([
+                'message' => 'Book not found'
+            ], 404);
+        }
+
         $book->delete();
 
         return response()->json([
-            'message' => 'Book Deleted Succesfully',
+            'message' => 'Book deleted successfully',
             'data' => new BookResource($book)
-        ],200);
+        ], 200);
     }
-
-
-
 }

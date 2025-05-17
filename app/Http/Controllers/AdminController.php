@@ -5,45 +5,108 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Book;
+use App\Models\Transaction;
+use Carbon\Carbon;
 
 class AdminController extends Controller
 {
     public function index()
     {
-        return User::where('role', '!=', 'admin')->get();
+        $users = User::all();
+        return response()->json([
+            'message' => 'Users retrieved successfully',
+            'data' => $users->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'created_at' => $user->created_at,
+                    'updated_at' => $user->updated_at
+                ];
+            })
+        ]);
     }
 
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'name' => 'string|max:255',
-            'email' => 'email|max:255|unique:users,email,' . $id,
-            'role' => 'in:user,admin',
-        ]);
-
         $user = User::findOrFail($id);
-        $user->update($request->only(['name', 'email', 'role']));
-
-        return response()->json([
-            'message' => 'User updated successfully',
-            'user' => $user,
-        ]);
+        $user->update($request->all());
+        return $user;
     }
 
     public function destroy($id)
     {
-        if (auth()->id() == $id) {
-            return response()->json(['message' => 'You cannot delete your own account.'], 403);
-        }
-
         $user = User::findOrFail($id);
         $user->delete();
-
-        return response()->json(['message' => 'User deleted successfully']);
+        return response()->json(null, 204);
     }
 
-    public function books()
+    public function popularBooks()
     {
-        return Book::all();
+        $popularBooks = Book::withCount('transactions')
+            ->orderBy('transactions_count', 'desc')
+            ->take(5)
+            ->get()
+            ->map(function ($book) {
+                return [
+                    'id' => $book->id,
+                    'title' => $book->title,
+                    'borrowCount' => $book->transactions_count
+                ];
+            });
+
+        return response()->json(['data' => $popularBooks]);
+    }
+
+    public function recentTransactions()
+    {
+        $recentTransactions = Transaction::with(['book', 'user'])
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(function ($transaction) {
+                return [
+                    'id' => $transaction->id,
+                    'bookTitle' => $transaction->book->title,
+                    'userName' => $transaction->user->name,
+                    'type' => $transaction->returned_at ? 'return' : 'borrow',
+                    'date' => $transaction->created_at->toDateTimeString()
+                ];
+            });
+
+        return response()->json(['data' => $recentTransactions]);
+    }
+
+    public function overdueTransactions()
+    {
+        $overdue = Transaction::whereNull('returned_at')
+            ->where('due_date', '<', Carbon::now())
+            ->get();
+
+        return response()->json(['data' => $overdue]);
+    }
+
+    public function activeTransactions()
+    {
+        $active = Transaction::whereNull('returned_at')
+            ->where('due_date', '>=', Carbon::now())
+            ->get();
+
+        return response()->json(['data' => $active]);
+    }
+
+    public function getStats()
+    {
+        $stats = [
+            'totalBooks' => Book::count(),
+            'totalUsers' => User::count(),
+            'activeLoans' => Transaction::whereNull('returned_at')->count(),
+            'overdueBorrows' => Transaction::whereNull('returned_at')
+                ->where('due_date', '<', Carbon::now())
+                ->count()
+        ];
+
+        return response()->json($stats);
     }
 }
