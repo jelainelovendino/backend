@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Book extends Model
 {
+    use HasFactory;
+
     protected $table = 'books';
 
     protected $fillable = [
@@ -21,8 +24,14 @@ class Book extends Model
         'description'
     ];
 
+    protected $casts = [
+        'published_date' => 'date',
+        'total_copies' => 'integer',
+        'available_copies' => 'integer',
+    ];
+
     public function transactions()
     {
-        return $this->hasMany(Transactions::class);
+        return $this->hasMany(Transaction::class);
     }
 }
