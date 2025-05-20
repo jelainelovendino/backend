@@ -1,5 +1,5 @@
 # Use PHP 8.1 with FPM
-FROM php:8.1-fpm
+FROM php:8.2-fpm
 
 # Install system dependencies and PHP extensions needed by Laravel
 RUN apt-get update && apt-get install -y \
