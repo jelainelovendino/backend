@@ -14,9 +14,9 @@ return [
 
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
-    'allowed_methods' => [''],
+    'allowed_methods' => ['*'],
 
-    'allowed_origins' => [env('https://front-end-eight-roan.vercel.app', 'http://localhost:3000')],
+    'allowed_origins' => ['https://front-end-eight-roan.vercel.app', 'http://localhost:3000'],
 
     'allowed_origins_patterns' => [],
 
