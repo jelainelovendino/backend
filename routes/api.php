@@ -13,6 +13,11 @@ use App\Models\Transactions;
 use App\Models\Book;
 use App\Models\User;
 
+// Health check endpoint
+Route::get('/health', function() {
+    return response()->json(['status' => 'ok']);
+});
+
 Route::apiResource('books', BookController::class);
 Route::apiResource('transactions', TransactionController::class);
 
