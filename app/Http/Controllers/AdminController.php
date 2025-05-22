@@ -80,18 +80,58 @@ class AdminController extends Controller
 
     public function overdueTransactions()
     {
-        $overdue = Transaction::whereNull('returned_at')
+        $overdue = Transaction::with(['book', 'user'])
+            ->whereNull('returned_at')
             ->where('due_date', '<', Carbon::now())
-            ->get();
+            ->get()
+            ->map(function ($transaction) {
+                return [
+                    'id' => $transaction->id,
+                    'user' => [
+                        'id' => $transaction->user->id,
+                        'name' => $transaction->user->name,
+                        'email' => $transaction->user->email,
+                    ],
+                    'book' => [
+                        'id' => $transaction->book->id,
+                        'title' => $transaction->book->title,
+                        'author' => $transaction->book->author,
+                    ],
+                    'borrow_date' => $transaction->borrowed_at,
+                    'due_date' => $transaction->due_date,
+                    'return_date' => $transaction->returned_at,
+                    'status' => 'overdue'
+                ];
+            });
 
         return response()->json(['data' => $overdue]);
     }
 
     public function activeTransactions()
     {
-        $active = Transaction::whereNull('returned_at')
+        $active = Transaction::with(['book', 'user'])
+            ->whereNull('returned_at')
             ->where('due_date', '>=', Carbon::now())
-            ->get();
+            ->get()
+            ->map(function ($transaction) {
+                return [
+                    'id' => $transaction->id,
+                    'user' => [
+                        'id' => $transaction->user->id,
+                        'name' => $transaction->user->name,
+                        'email' => $transaction->user->email,
+                    ],
+                    'book' => [
+                        'id' => $transaction->book->id,
+                        'title' => $transaction->book->title,
+                        'author' => $transaction->book->author,
+                    ],
+                    'borrow_date' => $transaction->borrowed_at,
+                    'due_date' => $transaction->due_date,
+                    'return_date' => $transaction->returned_at,
+                    'status' => 'active'
+                ];
+            });
 
         return response()->json(['data' => $active]);
     }

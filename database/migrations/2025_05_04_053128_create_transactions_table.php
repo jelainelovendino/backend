@@ -20,6 +20,12 @@ return new class extends Migration
             $table->timestamp('due_date')->nullable();
             $table->string('status')->default('active');
             $table->timestamps();
+
+            // Add indexes for frequently queried columns
+            $table->index(['user_id', 'status']);
+            $table->index(['book_id', 'status']);
+            $table->index(['due_date', 'returned_at']);
+            $table->index('status');
         });
     }
 
